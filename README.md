@@ -1,4 +1,4 @@
-# Template Cleaner (PPTX layout cleanup)
+# Automated PowerPoint deck cleanup using geometry analysis and AI vision (PPTX layout cleanup)
 
 Upload a PowerPoint deck → get back the **same deck with layout defects repaired**.
 This service is **cleaning-only**: it runs visual QC on an existing `.pptx`, applies
