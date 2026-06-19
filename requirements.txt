@@ -1,0 +1,19 @@
+# Web service
+fastapi==0.115.6
+uvicorn==0.30.6
+python-multipart==0.0.12        # required by FastAPI for file/form uploads
+pydantic==2.8.2
+pydantic-settings==2.4.0
+
+# OpenAI (vision QC + LLM geometric fix fallback)
+openai==1.59.6
+
+# PPTX inspection / editing + layout geometry
+python-pptx==0.6.23
+Pillow>=10.0.0                  # real font metrics for text-width measurement
+PyMuPDF>=1.24.0                 # rendered-PDF geometry (geometry engine complement)
+pdf2image>=1.17.0               # PPTX->PDF->PNG screenshots (vision engine)
+
+# External tools (NOT pip-installable — install separately, see README):
+#   * LibreOffice (soffice)  -> PPTX -> PDF conversion
+#   * Poppler                -> pdf2image PDF -> PNG rendering

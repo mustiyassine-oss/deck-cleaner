@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deck Cleaner — Fix PPTX Layout Issues</title>
+<style>
+  :root {
+    --orange: #2f80ed;
+    --orange-light: #56ccf2;
+    --dark: #1A1A2E;
+    --darker: #12121F;
+    --card: #1E1E32;
+    --card-hover: #252542;
+    --border: #2A2A45;
+    --text: #E8E8F0;
+    --text-muted: #8888A8;
+    --success: #27AE60;
+    --error: #E74C3C;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--darker);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  .header {
+    width: 100%;
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--dark);
+    border-bottom: 1px solid var(--border);
+  }
+  .header .logo {
+    width: 38px; height: 38px;
+    background: var(--orange);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px; color: #fff;
+  }
+  .header h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .header h1 span { color: var(--orange); }
+  .header .tagline {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── Main container ─────────────────────────────── */
+  .container {
+    width: 100%;
+    max-width: 720px;
+    padding: 48px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 12px 0 8px;
+  }
+  .hero h2 {
+    font-size: 32px; font-weight: 700;
+    background: linear-gradient(135deg, var(--text) 40%, var(--orange));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.3;
+  }
+  .hero p {
+    color: var(--text-muted); margin-top: 10px; font-size: 15px; line-height: 1.5;
+  }
+
+  /* ── Upload area ────────────────────────────────── */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    padding: 44px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+  .upload-area:hover, .upload-area.drag-over {
+    border-color: var(--orange);
+    background: var(--card-hover);
+  }
+  .upload-area.has-file {
+    border-color: var(--success);
+    border-style: solid;
+  }
+  .upload-area input { display: none; }
+  .upload-icon {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    background: rgba(47, 128, 237, 0.1);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .upload-icon svg { width: 28px; height: 28px; stroke: var(--orange); fill: none; stroke-width: 1.8; }
+  .upload-area h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .upload-area h3 span { color: var(--orange); }
+  .upload-area p { color: var(--text-muted); font-size: 13px; }
+  .file-badge {
+    display: none;
+    margin-top: 14px;
+    padding: 8px 16px;
+    background: rgba(39, 174, 96, 0.12);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--success);
+    align-items: center; gap: 8px;
+    justify-content: center;
+  }
+  .has-file .file-badge { display: inline-flex; }
+  .has-file .upload-hint { display: none; }
+
+  /* ── Engine toggle ──────────────────────────────── */
+  .engine-section { display: flex; flex-direction: column; gap: 10px; }
+  .engine-section > label {
+    font-size: 14px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .segmented {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    gap: 4px;
+  }
+  .segmented button {
+    flex: 1;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .segmented button small {
+    font-size: 11px; font-weight: 400; opacity: 0.8;
+    text-transform: none; letter-spacing: 0;
+  }
+  .segmented button.active {
+    background: var(--orange);
+    color: #fff;
+  }
+
+  /* ── Execute button ─────────────────────────────── */
+  .execute-btn {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--orange), var(--orange-light));
+    color: #fff;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .execute-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(47, 128, 237, 0.35);
+  }
+  .execute-btn:active:not(:disabled) { transform: translateY(0); }
+  .execute-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Progress panel ─────────────────────────────── */
+  .progress-panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .progress-panel.visible { display: flex; }
+
+  .progress-header {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .progress-header .spinner {
+    width: 22px; height: 22px;
+    border: 3px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .progress-header.done .spinner { display: none; }
+  .progress-header.error .spinner {
+    border-top-color: var(--error);
+    animation: none;
+  }
+  .progress-header h3 { font-size: 16px; font-weight: 600; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--orange), var(--orange-light));
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: var(--text-muted);
+    transition: color 0.3s;
+  }
+  .step.active { color: var(--text); }
+  .step.done { color: var(--success); }
+  .step.error { color: var(--error); }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .step.active .step-dot {
+    border-color: var(--orange);
+    color: var(--orange);
+    box-shadow: 0 0 12px rgba(47, 128, 237, 0.25);
+  }
+  .step.done .step-dot {
+    border-color: var(--success);
+    background: var(--success);
+    color: #fff;
+  }
+  .step.error .step-dot {
+    border-color: var(--error);
+    background: var(--error);
+    color: #fff;
+  }
+
+  /* ── Download area ──────────────────────────────── */
+  .download-area {
+    display: none;
+    text-align: center;
+    padding: 32px;
+    background: var(--card);
+    border: 1px solid var(--success);
+    border-radius: var(--radius);
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .download-area.visible { display: flex; }
+  .download-area .check-icon {
+    width: 64px; height: 64px;
+    background: rgba(39,174,96,0.12);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .download-area .check-icon svg { width: 32px; height: 32px; stroke: var(--success); fill: none; stroke-width: 2; }
+  .download-area h3 { font-size: 20px; font-weight: 700; }
+  .download-area p { color: var(--text-muted); font-size: 14px; }
+  .download-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 36px;
+    background: var(--success);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .download-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(39,174,96,0.3);
+  }
+  .download-btn svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
+
+  .error-msg {
+    display: none;
+    padding: 20px 24px;
+    background: rgba(231,76,60,0.08);
+    border: 1px solid var(--error);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .error-msg.visible { display: block; }
+  .error-msg .error-text {
+    color: var(--error);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .error-msg .error-hint {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .reset-link {
+    color: var(--orange);
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    background: none; border: none;
+    font-family: inherit;
+  }
+  .reset-link:hover { color: var(--orange-light); }
+
+  /* ── Footer ─────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">C</div>
+  <h1>Deck<span>Cleaner</span></h1>
+  <div class="tagline">Automatic PPTX layout cleanup</div>
+</div>
+
+<!-- Main -->
+<div class="container">
+  <div class="hero">
+    <h2>Clean up messy slide layouts</h2>
+    <p>Upload a PowerPoint and we'll detect overlapping text, out-of-bounds tables, and cluttered labels, then fix the geometry automatically.</p>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="templateInput" accept=".pptx">
+    <div class="upload-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <div class="upload-hint">
+      <h3>Drop your PowerPoint here or <span>browse</span></h3>
+      <p>.pptx files only</p>
+    </div>
+    <div class="file-badge" id="fileBadge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span id="fileName"></span>
+    </div>
+  </div>
+
+  <!-- Engine toggle -->
+  <div class="engine-section">
+    <label>Cleaning engine</label>
+    <div class="segmented" id="engineToggle">
+      <button type="button" data-engine="vision" class="active">
+        Vision (current)
+        <small>GPT-4.1 reviews screenshots</small>
+      </button>
+      <button type="button" data-engine="geometry">
+        Deterministic
+        <small>PDF geometry, no AI</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- Execute -->
+  <button class="execute-btn" id="cleanTemplateBtn">Clean Template</button>
+
+  <!-- Progress -->
+  <div class="progress-panel" id="progressPanel">
+    <div class="progress-header" id="progressHeader">
+      <div class="spinner"></div>
+      <h3 id="progressTitle">Cleaning your template...</h3>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="steps" id="steps">
+      <div class="step" id="step0" data-idx="0">
+        <div class="step-dot">1</div>
+        <span>Reading uploaded PowerPoint</span>
+      </div>
+      <div class="step" id="step1" data-idx="1">
+        <div class="step-dot">2</div>
+        <span>Running QC — detecting layout issues</span>
+      </div>
+      <div class="step" id="step2" data-idx="2">
+        <div class="step-dot">3</div>
+        <span>Applying geometric fixes</span>
+      </div>
+      <div class="step" id="step3" data-idx="3">
+        <div class="step-dot">4</div>
+        <span>Re-checking cleaned slides</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg" role="alert">
+    <div class="error-text" id="errorText"></div>
+    <div class="error-hint" id="errorHint">You can try again with a different file.</div>
+  </div>
+
+  <!-- Download -->
+  <div class="download-area" id="downloadArea">
+    <div class="check-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h3 id="downloadTitle">Your cleaned template is ready!</h3>
+    <p id="deckInfo"></p>
+    <a class="download-btn" id="downloadBtn" href="#">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download PPTX
+    </a>
+    <button class="reset-link" id="resetBtn">Clean another template</button>
+  </div>
+</div>
+
+<div class="footer">Visual QC + geometric repair, powered by GPT-4.1 vision</div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const templateInput = document.getElementById('templateInput');
+const fileBadge  = document.getElementById('fileBadge');
+const fileName   = document.getElementById('fileName');
+const cleanTemplateBtn = document.getElementById('cleanTemplateBtn');
+const progressPanel = document.getElementById('progressPanel');
+const progressHeader = document.getElementById('progressHeader');
+const progressTitle = document.getElementById('progressTitle');
+const progressFill = document.getElementById('progressFill');
+const errorMsg   = document.getElementById('errorMsg');
+const errorText  = document.getElementById('errorText');
+const errorHint  = document.getElementById('errorHint');
+const downloadArea = document.getElementById('downloadArea');
+const downloadTitle = document.getElementById('downloadTitle');
+const downloadBtn = document.getElementById('downloadBtn');
+const deckInfo   = document.getElementById('deckInfo');
+const resetBtn   = document.getElementById('resetBtn');
+
+let selectedTemplateFile = null;
+let blobUrl = null;
+let selectedEngine = 'vision';
+
+// ── Engine toggle ─────────────────────────────────────
+const engineToggle = document.getElementById('engineToggle');
+engineToggle.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-engine]');
+  if (!btn) return;
+  selectedEngine = btn.dataset.engine;
+  engineToggle.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+});
+
+// ── File upload handling ──────────────────────────────
+uploadArea.addEventListener('click', () => templateInput.click());
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+templateInput.addEventListener('change', () => { if (templateInput.files.length) setFile(templateInput.files[0]); });
+
+function setFile(f) {
+  if (!/\.pptx$/i.test(f.name)) { alert('Please upload a PowerPoint file (.pptx)'); return; }
+  selectedTemplateFile = f;
+  fileName.textContent = f.name;
+  uploadArea.classList.add('has-file');
+}
+
+// ── Step management ───────────────────────────────────
+const STEPS = [0, 1, 2, 3];
+function setStep(idx, pct) {
+  STEPS.forEach(i => {
+    const el = document.getElementById('step' + i);
+    if (!el) return;
+    el.classList.remove('active', 'done', 'error');
+    if (i < idx) el.classList.add('done');
+    else if (i === idx) el.classList.add('active');
+  });
+  progressFill.style.width = (pct !== undefined ? pct : Math.min(10 + idx * 22, 95)) + '%';
+}
+function stepDone(idx) {
+  const el = document.getElementById('step' + idx);
+  if (el) { el.classList.remove('active'); el.classList.add('done'); }
+}
+function stepError(idx) {
+  const el = document.getElementById('step' + idx);
+  if (el) { el.classList.remove('active'); el.classList.add('error'); }
+}
+
+// ── Clean template ────────────────────────────────────
+cleanTemplateBtn.addEventListener('click', async () => {
+  if (!selectedTemplateFile) { alert('Please upload a .pptx file first.'); return; }
+
+  errorMsg.classList.remove('visible');
+  downloadArea.classList.remove('visible');
+  progressPanel.classList.add('visible');
+  progressHeader.classList.remove('done', 'error');
+  progressTitle.textContent = 'Cleaning your template...';
+  cleanTemplateBtn.disabled = true;
+  if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+  setStep(0, 5);
+
+  const form = new FormData();
+  form.append('template', selectedTemplateFile);
+  form.append('engine', selectedEngine);
+
+  try {
+    const resp = await fetch('/clean-template', { method: 'POST', body: form });
+    if (!resp.ok) {
+      let detail = `Server error (${resp.status})`;
+      try { const j = await resp.json(); detail = j.detail || detail; } catch {}
+      throw new Error(detail);
+    }
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let pptxB64 = null;
+    let errMsg = null;
+    let finalLabel = 'Template cleaned!';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const ev = JSON.parse(line.slice(6));
+          if (ev.error) { errMsg = ev.error; break; }
+          if (typeof ev.step === 'number') setStep(Math.min(3, ev.step), ev.pct);
+          if (ev.label) progressTitle.textContent = ev.label;
+          if (ev.file) { pptxB64 = ev.file; finalLabel = ev.label || finalLabel; }
+        } catch (_) {}
+      }
+      if (errMsg) break;
+    }
+    if (errMsg) throw new Error(errMsg);
+    if (!pptxB64) throw new Error('No cleaned file received');
+
+    const bin = Uint8Array.from(atob(pptxB64), c => c.charCodeAt(0));
+    const blob = new Blob([bin], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    blobUrl = URL.createObjectURL(blob);
+    STEPS.forEach(i => stepDone(i));
+    progressFill.style.width = '100%';
+    progressHeader.classList.add('done');
+    progressTitle.textContent = finalLabel;
+    downloadTitle.textContent = finalLabel;
+    deckInfo.textContent = `cleaned-template.pptx — ${(blob.size / 1024).toFixed(0)} KB`;
+    downloadBtn.href = blobUrl;
+    downloadBtn.download = 'cleaned-template.pptx';
+    downloadArea.classList.add('visible');
+  } catch (err) {
+    const activeIdx = STEPS.findIndex(i => document.getElementById('step' + i)?.classList.contains('active'));
+    if (activeIdx >= 0) stepError(activeIdx);
+    progressHeader.classList.add('error');
+    progressTitle.textContent = 'Template cleanup failed';
+    errorText.textContent = err.message || 'An unexpected error occurred.';
+    errorHint.textContent = 'Try again with a different file.';
+    errorMsg.classList.add('visible');
+  } finally {
+    cleanTemplateBtn.disabled = false;
+  }
+});
+
+// ── Reset ─────────────────────────────────────────────
+resetBtn.addEventListener('click', () => {
+  progressPanel.classList.remove('visible');
+  downloadArea.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+  errorText.textContent = '';
+  progressFill.style.width = '0%';
+  selectedTemplateFile = null;
+  templateInput.value = '';
+  fileName.textContent = '';
+  uploadArea.classList.remove('has-file');
+  STEPS.forEach(i => {
+    const el = document.getElementById('step' + i);
+    if (el) el.classList.remove('active', 'done', 'error');
+  });
+});
+</script>
+</body>
+</html>
