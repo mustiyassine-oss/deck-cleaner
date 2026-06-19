@@ -1,0 +1,43 @@
+# ── Python ──────────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# ── Secrets / local config ──────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Local working artifacts ─────────────────────────────
+tmp_geo/
+analysis_imgs/
+*.log
+
+# Generated / uploaded decks and spreadsheets (incl. sample templates
+# with potentially sensitive client data). Remove a line below if you
+# intentionally want to commit a given file (e.g. git add -f Templates/foo.pptx).
+*.pptx
+*.xlsx
+*.xlsm
+*.xls
+out.*
+
+# Rendered QC intermediates
+*.pdf
+*.png
+!static/**/*.png
+
+# ── Editor / OS ─────────────────────────────────────────
+.vscode/
+.idea/
+.cursor/
+.DS_Store
+Thumbs.db
